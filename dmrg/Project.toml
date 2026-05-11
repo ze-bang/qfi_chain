@@ -1,0 +1,19 @@
+[deps]
+ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"
+ITensorMPS = "0d1a4710-d33b-49a5-8f18-73bdf49b47e2"
+ITensorTDVP = "25707e16-a4db-4a07-99d9-4d67b7af0342"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[compat]
+julia = "1.10"
+ITensors = "0.6"
+ITensorMPS = "0.2"
+ITensorTDVP = "0.4"
+HDF5 = "0.17"
+JSON3 = "1"
+ArgParse = "1"

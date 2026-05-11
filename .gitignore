@@ -1,0 +1,30 @@
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.so
+.venv/
+.ipynb_checkpoints/
+
+# LaTeX intermediates (keep .tex and .pdf only)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Julia
+Manifest.toml
+
+# Cluster outputs (we never want these in git)
+dmrg/logs/
+dmrg/states/
+dmrg/obs/
+
+# Local scratch
+*.swp
+.DS_Store
