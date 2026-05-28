@@ -1,0 +1,1153 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\lstdefinelanguage{Julia}{
+  morekeywords={function,end,for,in,if,else,elseif,return,using,const,Dict,Vector,Int,Float64,String,Any,true,false,do},
+  sensitive=true,
+  morecomment=[l]\#,
+  morestring=[b]",
+}
+
+\lstset{
+  language=Julia,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!50!black},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+}
+
+\newcommand{\ket}[1]{\left|#1\right\rangle}
+\newcommand{\bra}[1]{\left\langle#1\right|}
+\newcommand{\braket}[2]{\left\langle#1\,\middle|\,#2\right\rangle}
+\newcommand{\V}{\mathcal V}
+\newcommand{\FQ}{F_Q}
+\newcommand{\FEP}{F_{\rm EP}}
+\newcommand{\dd}{\delta}
+\newcommand{\etaK}[1]{\eta^{\star,\mathrm{conn}}_{\le #1}}
+\newcommand{\Tr}{\mathrm{Tr}}
+
+\title{Operator-Resolved QFI Response and Matched-Filter Computation of \texorpdfstring{$\eta_{\le k}$}{eta<=k}}
+\author{QFI chain notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Physics Question}
+
+The sharp question is not whether a single scalar ``detects
+entanglement.''  The sharp question is:
+\begin{quote}
+  Given a state $\ket{\psi}$ and a generator $G$, through which
+  observable algebra is the QFI response
+  $\ket{\dd G}=(G-\langle G\rangle)\ket{\psi}$ visible?
+\end{quote}
+The total response strength is measured by
+\[
+  \FQ=4\braket{\dd G}{\dd G}.
+\]
+The matched-filter ratio
+\[
+  \eta^\star_{\V}
+  =
+  \frac{
+    \|P_{\V\ket{\psi}}\ket{\dd G}\|^2
+  }{
+    \|\ket{\dd G}\|^2
+  }
+\]
+then asks what fraction of that response can be read out by observables
+inside a specified real Hermitian algebra $\V$.
+
+Thus $\eta^\star_{\V}$ is best understood as an
+\emph{operator-resolved visibility of the QFI response}.  It is not a
+universal entanglement monotone and should not be interpreted as a
+sure-fire diagnostic of long-range entanglement by itself.  The choice
+of $\V$ is part of the physical question.
+
+\paragraph{Example: Haldane-chain warning.}
+In a spin-1 Haldane phase, local two-point correlations are short-ranged,
+but the entanglement/correlation structure is naturally exposed by
+nonlocal string operators.  If one restricts $\V$ to ordinary local
+windows, $\eta^\star_{\V}$ may remain small until large windows are
+included.  That does \emph{not} mean the Haldane phase is long-range
+entangled in the GHZ sense.  It means the response to the chosen $G$ is
+not efficiently visible in the local-window algebra.  If $\V$ is enlarged
+to include the appropriate string algebra, the same short-range
+entangled SPT state can have a large $\eta^\star_{\V}$.
+
+This is the correct interpretation:
+\[
+  \boxed{
+  \eta^\star_{\V}
+  \text{ measures visibility through } \V,
+  \text{ not entanglement itself.}
+  }
+\]
+Different choices of $\V$ expose different channels:
+\begin{itemize}
+  \item local-window algebras diagnose local recoverability of the
+  response;
+  \item string algebras diagnose hidden or SPT response channels;
+  \item scale-dependent families diagnose critical delocalization of the
+  response.
+\end{itemize}
+
+\section{Numerical Purpose}
+
+The important numerical observables for the corrected period-4
+$J_1$--$J_2$--$J_3$ chain are
+\begin{equation}
+  \FQ[\psi;G]
+  \qquad\text{and}\qquad
+  \etaK{k}
+  =
+  \frac{\FEP[O^\star_{\le k}]}{\FQ},
+\end{equation}
+where $G=S^z_\pi$ is the staggered magnetization and
+$O^\star_{\le k}$ is the optimal matched-filter observable inside the
+real Hermitian subspace of connected Pauli windows of size at most $k$.
+For this specific paper figure, $\V$ is the connected-window algebra,
+so $\eta_{\le k}$ means ``local-window visibility of the staggered QFI
+response.''
+For the present path scan we need $k=2,4$ at
+\[
+  N=16,32,64
+\]
+along
+\[
+  D\to C:\quad (J_1,J_2,J_3)=(1,t,0),
+\]
+\[
+  C\to U:\quad (J_1,J_2,J_3)=(1,1,t),
+\]
+\[
+  U\to D:\quad (J_1,J_2,J_3)=(1,t,t).
+\]
+Here $J_1,J_2,J_3$ label the period-4 nearest-neighbor bond pattern
+\[
+  J_1,J_2,J_1,J_3,J_1,J_2,J_1,J_3,\ldots,
+\]
+not first-, second-, and third-neighbor couplings.
+
+\section{Definitions}
+
+Let $\ket{\psi}$ be a normalized DMRG ground state.  The generator is
+\begin{equation}
+  G
+  =
+  S^z_\pi
+  =
+  \sum_{j=1}^{N}(-1)^j S^z_j .
+\end{equation}
+The QFI response vector is
+\begin{equation}
+  \ket{\dd G}
+  =
+  \left(G-\langle G\rangle\right)\ket{\psi},
+  \qquad
+  \langle G\rangle=\bra{\psi}G\ket{\psi}.
+\end{equation}
+The pure-state QFI is
+\begin{equation}
+  \FQ
+  =
+  4\braket{\dd G}{\dd G}.
+\end{equation}
+In the ratio $\eta$, the overall normalization of $G$ cancels; the code
+therefore only needs a consistent $G$ convention between numerator and
+denominator.
+
+\section{How \texorpdfstring{$F_Q$}{FQ} is Computed}
+
+For a pure state,
+\begin{equation}
+  \FQ[\psi;G]
+  =
+  4\,\mathrm{Var}_{\psi}(G)
+  =
+  4
+  \left(
+    \langle G^2\rangle-\langle G\rangle^2
+  \right).
+  \label{eq:FQ_var}
+\end{equation}
+For the staggered generator
+\[
+  G=S^z_\pi=\frac{1}{\sqrt N}\sum_{j=1}^{N}(-1)^j S^z_j
+\]
+used in the production observable files, this becomes
+\begin{align}
+  \FQ
+  &=
+  4
+  \left[
+    \frac1N
+    \sum_{j,k=1}^{N}
+    (-1)^{j+k}
+    \left(
+      \langle S^z_j S^z_k\rangle
+      -
+      \langle S^z_j\rangle\langle S^z_k\rangle
+    \right)
+  \right].
+  \label{eq:FQ_corr}
+\end{align}
+This is the formula used in the DMRG observable JSONs.
+The factor $1/\sqrt N$ makes $G$ an intensive collective mode, so
+$\FQ=O(1)$ for the dimer and cluster product states and grows only
+logarithmically at the uniform Heisenberg point.
+
+\subsection{Correlation-matrix implementation}
+
+The code first computes the one-point magnetization
+\begin{equation}
+  m_j^z=\langle S^z_j\rangle
+\end{equation}
+and the two-point correlator
+\begin{equation}
+  C^{zz}_{jk}=\langle S^z_jS^z_k\rangle .
+\end{equation}
+For $j\ne k$, $C^{zz}_{jk}$ is obtained from ITensor's
+\texttt{correlation\_matrix}; for $j=k$ the spin-$1/2$ identity gives
+\begin{equation}
+  \langle (S^z_j)^2\rangle=\frac14.
+\end{equation}
+The production routine in \texttt{observables.jl} implements
+\eqref{eq:FQ_corr} as
+\begin{lstlisting}
+# F_Q (probe G = N^{-1/2} sum_j (-1)^j S^z_j; F_Q = 4 Var(G)).
+FQ = 0.0
+for j in 1:N, k in 1:N
+    sgn = ((-1)^(j+k))
+    czz = j < k ? real(two_pt[3, 3, j, k]) :
+          j > k ? real(two_pt[3, 3, k, j]) :
+          0.25
+    FQ += 4.0/N * sgn * (czz - one_pt[3, j] * one_pt[3, k])
+end
+\end{lstlisting}
+This is equivalent to building the MPO for $G$, applying it to the MPS,
+and evaluating $4\braket{\dd G}{\dd G}$.
+
+\subsection{MPO implementation}
+
+The eta postprocessor uses the vector form directly.  It constructs
+\[
+  G=\sum_j(-1)^jS^z_j
+\]
+as an MPO, applies it to the MPS, and centers the result:
+\begin{lstlisting}
+Gpsi = apply(G, psi; cutoff=1e-14)
+target = Gpsi - inner(psi, Gpsi) * psi
+\end{lstlisting}
+Then
+\begin{equation}
+  \braket{\mathrm{target}}{\mathrm{target}}
+  =
+  \braket{\dd G}{\dd G}
+\end{equation}
+is the denominator used in $\eta$.  The extra normalization by
+$1/\sqrt N$ is unnecessary inside $\eta$, because both numerator and
+denominator scale in the same way under $G\mapsto cG$:
+\[
+  \ket{\dd G}\mapsto c\ket{\dd G},
+  \qquad
+  \eta\mapsto \eta.
+\]
+
+\subsection{Why both \texorpdfstring{$F_Q$}{FQ} methods agree}
+
+There are two equivalent computational routes:
+\begin{enumerate}
+  \item compute all $S^zS^z$ connected correlations and evaluate
+  \eqref{eq:FQ_corr};
+  \item build the MPS vector $\ket{\dd G}$ and evaluate
+  $4\braket{\dd G}{\dd G}$.
+\end{enumerate}
+They are the same because
+\begin{align}
+  \braket{\dd G}{\dd G}
+  &=
+  \bra{\psi}
+  \left(G-\langle G\rangle\right)^2
+  \ket{\psi} \\
+  &=
+  \langle G^2\rangle-\langle G\rangle^2 \\
+  &=
+  \frac1N
+  \sum_{j,k}
+  (-1)^{j+k}
+  \left(
+    \langle S^z_jS^z_k\rangle
+    -
+    \langle S^z_j\rangle\langle S^z_k\rangle
+  \right).
+\end{align}
+The JSON files store the first route because it is also useful as a
+diagnostic of the raw spin correlations.  The eta postprocessor uses the
+second route because it needs $\ket{\dd G}$ as an actual MPS target
+vector for the matched-filter projection.
+
+\section{Matched Filter on an Operator Subspace}
+
+Let
+\[
+  \V_{\le k}^{\rm conn}
+  =
+  \mathrm{span}_{\mathbb R}\{O_a\}
+\]
+be the real vector space spanned by Hermitian Pauli strings supported on
+connected windows of length at most $k$.
+For a candidate observable
+\[
+  O(\bm w)=\sum_a w_a O_a,
+\]
+the error-propagation Fisher information is
+\begin{equation}
+  \FEP[O(\bm w)]
+  =
+  \frac{
+    \left|-i\langle[O(\bm w),G]\rangle\right|^2
+  }{
+    \mathrm{Var}(O(\bm w))
+  }.
+\end{equation}
+Define
+\begin{equation}
+  s_a
+  =
+  -i\langle[O_a,G]\rangle,
+  \qquad
+  \Sigma_{ab}
+  =
+  \frac12
+  \left\langle
+    \{\dd O_a,\dd O_b\}
+  \right\rangle,
+\end{equation}
+where
+\[
+  \dd O_a=O_a-\langle O_a\rangle .
+\]
+Then
+\begin{equation}
+  \FEP[O(\bm w)]
+  =
+  \frac{(\bm w^T\bm s)^2}{\bm w^T\Sigma\bm w}.
+\end{equation}
+
+\subsection{Why the maximizer is the Wiener solution}
+
+The optimization problem is therefore
+\begin{equation}
+  \max_{\bm w\ne 0}
+  R(\bm w),
+  \qquad
+  R(\bm w)
+  =
+  \frac{(\bm w^T\bm s)^2}{\bm w^T\Sigma\bm w}.
+  \label{eq:rayleigh}
+\end{equation}
+This is a generalized Rayleigh quotient.  The numerator is the squared
+linear signal extracted by the observable $O(\bm w)$, while the
+denominator is its variance/noise.  Thus the problem is exactly the
+same algebraic problem as a matched filter or Wiener filter: choose
+weights $\bm w$ that maximize signal-to-noise.
+
+First assume that $\Sigma$ is strictly positive definite.  The quotient
+is invariant under rescaling $\bm w\mapsto c\bm w$, so we may impose the
+normalization constraint
+\[
+  \bm w^T\Sigma\bm w=1
+\]
+and maximize
+\[
+  (\bm w^T\bm s)^2.
+\]
+Equivalently, maximize $\bm w^T\bm s$ with the same constraint; the
+overall sign of $\bm w$ is irrelevant because $\FEP$ squares the signal.
+Introduce a Lagrange multiplier:
+\begin{equation}
+  \mathcal L(\bm w,\lambda)
+  =
+  \bm w^T\bm s
+  -
+  \frac{\lambda}{2}
+  \left(
+    \bm w^T\Sigma\bm w-1
+  \right).
+\end{equation}
+Stationarity gives
+\begin{equation}
+  \frac{\partial\mathcal L}{\partial\bm w}
+  =
+  \bm s-\lambda\Sigma\bm w
+  =
+  0,
+\end{equation}
+so
+\begin{equation}
+  \Sigma\bm w
+  =
+  \lambda^{-1}\bm s.
+\end{equation}
+The overall scalar is immaterial, since $R(\bm w)$ is scale invariant.
+Therefore the optimizing direction is
+\begin{equation}
+  \bm w^\star \propto \Sigma^{-1}\bm s.
+\end{equation}
+Choosing the natural normalization gives
+\begin{equation}
+  \bm w^\star=\Sigma^{-1}\bm s.
+\end{equation}
+Substituting back into \eqref{eq:rayleigh},
+\begin{align}
+  R(\bm w^\star)
+  &=
+  \frac{
+    \left[
+      (\Sigma^{-1}\bm s)^T\bm s
+    \right]^2
+  }{
+    (\Sigma^{-1}\bm s)^T\Sigma(\Sigma^{-1}\bm s)
+  } \\
+  &=
+  \frac{
+    \left[
+      \bm s^T\Sigma^{-1}\bm s
+    \right]^2
+  }{
+    \bm s^T\Sigma^{-1}\bm s
+  } \\
+  &=
+  \bm s^T\Sigma^{-1}\bm s.
+\end{align}
+
+Equivalently, the same result follows immediately from
+Cauchy--Schwarz.  Write
+\[
+  \bm u=\Sigma^{1/2}\bm w,
+  \qquad
+  \bm v=\Sigma^{-1/2}\bm s.
+\]
+Then
+\[
+  \bm w^T\bm s
+  =
+  \bm u^T\bm v,
+  \qquad
+  \bm w^T\Sigma\bm w
+  =
+  \bm u^T\bm u.
+\]
+Therefore
+\begin{equation}
+  R(\bm w)
+  =
+  \frac{(\bm u^T\bm v)^2}{\bm u^T\bm u}
+  \le
+  \bm v^T\bm v
+  =
+  \bm s^T\Sigma^{-1}\bm s,
+\end{equation}
+with equality when
+\[
+  \bm u\propto \bm v,
+  \qquad\text{i.e.}\qquad
+  \Sigma^{1/2}\bm w
+  \propto
+  \Sigma^{-1/2}\bm s,
+\]
+again giving
+\[
+  \bm w^\star\propto\Sigma^{-1}\bm s.
+\]
+
+\subsection{What \texorpdfstring{$\Sigma^+$}{Sigma+} means}
+
+In practice, $\Sigma$ need not be strictly invertible.  This is not a
+numerical accident: the operator list often contains redundant
+directions.  For example, two different Pauli strings may create the
+same vector after acting on $\ket{\psi}$, or a string may annihilate the
+state entirely.  Such directions have zero variance and therefore lie
+in the null space of $\Sigma$.
+
+The symbol
+\[
+  \Sigma^+
+\]
+means the Moore--Penrose pseudoinverse.  If
+\begin{equation}
+  \Sigma
+  =
+  V\Lambda V^T
+  =
+  \sum_{\alpha}
+  \lambda_\alpha
+  \bm v_\alpha\bm v_\alpha^T
+\end{equation}
+with $\lambda_\alpha\ge0$, then
+\begin{equation}
+  \boxed{
+  \Sigma^+
+  =
+  \sum_{\alpha:\lambda_\alpha>0}
+  \lambda_\alpha^{-1}
+  \bm v_\alpha\bm v_\alpha^T.
+  }
+  \label{eq:pseudoinverse}
+\end{equation}
+Zero-variance directions are discarded rather than inverted.
+
+With a singular covariance matrix, decompose the operator coefficient
+vector into range and null components,
+\[
+  \bm w=\bm w_{\rm ran}+\bm w_{\rm null},
+  \qquad
+  \Sigma \bm w_{\rm null}=0.
+\]
+The variance depends only on $\bm w_{\rm ran}$.  A physically sensible
+observable cannot obtain finite signal from a strictly zero-variance
+direction; equivalently, the signal vector $\bm s$ lies in the range of
+$\Sigma$ for exact arithmetic.  Numerically, we project onto the
+positive-eigenvalue subspace.  The optimizing minimum-norm coefficient
+vector is then
+\begin{equation}
+  \bm w^\star
+  =
+  \Sigma^+\bm s,
+\end{equation}
+and the optimal extracted Fisher information is
+\begin{equation}
+  \boxed{
+  \eta^\star_{\V}
+  =
+  \frac{\bm s^T\Sigma^+\bm s}{\FQ}.
+  }
+\end{equation}
+
+This is what the code implements.  In the notation of the MPS Gram
+matrix below, $\Sigma$ is represented by the real symmetric Gram matrix
+$K$, and $K^+$ is applied by diagonalizing $K$, discarding eigenvalues
+below a tolerance, and dividing only by the retained eigenvalues.
+
+\section{Equivalent Projection Formula}
+
+For implementation, it is more stable to use the Hilbert-space
+projection form.  Define
+\begin{equation}
+  \ket{\phi_a}
+  =
+  \dd O_a\ket{\psi}
+  =
+  \left(O_a-\langle O_a\rangle\right)\ket{\psi}.
+\end{equation}
+Then
+\begin{equation}
+  \eta^\star_{\V}
+  =
+  \frac{
+    \left\|
+      P_{\mathrm{span}_{\mathbb R}\{\ket{\phi_a}\}}
+      \ket{\dd G}
+    \right\|^2
+  }{
+    \braket{\dd G}{\dd G}
+  }.
+\end{equation}
+
+For a real Hermitian operator subspace, the ED code uses the real-form
+embedding
+\begin{equation}
+  \Phi_{\rm real}
+  =
+  \begin{bmatrix}
+    \mathrm{Re}\,\phi_1 & \cdots & \mathrm{Re}\,\phi_M\\
+    \mathrm{Im}\,\phi_1 & \cdots & \mathrm{Im}\,\phi_M
+  \end{bmatrix},
+  \qquad
+  t
+  =
+  \begin{bmatrix}
+    \mathrm{Im}\,\dd G\\
+    -\mathrm{Re}\,\dd G
+  \end{bmatrix}.
+\end{equation}
+Then
+\begin{equation}
+  \eta^\star_{\V}
+  =
+  \frac{\|P_{\mathrm{col}(\Phi_{\rm real})}t\|^2}{\|t\|^2}.
+\end{equation}
+The MPS code computes this same projection without expanding the full
+$2^N$ vector.
+
+\section{Symmetry Reduction: Odd-\texorpdfstring{$Y$}{Y} Sector}
+
+The DMRG states in this campaign are real and live in the
+$S^z_{\rm tot}=0$ sector.  The generator $G=S^z_\pi$ is real and
+diagonal, so
+\[
+  \ket{\dd G}
+\]
+is a real vector.  In the real-form target
+\[
+  t
+  =
+  \begin{bmatrix}
+    \mathrm{Im}\,\dd G\\
+    -\mathrm{Re}\,\dd G
+  \end{bmatrix},
+\]
+the first block vanishes and the second block is nonzero.
+
+A Hermitian Pauli string with an even number of $Y$ operators maps a real
+state to a real vector.  Its real-form column has support in the first
+block:
+\[
+  \begin{bmatrix}
+    \mathrm{Re}\,\phi_a\\
+    0
+  \end{bmatrix}.
+\]
+It therefore has zero direct overlap with $t$.
+
+A Hermitian Pauli string with an odd number of $Y$ operators maps a real
+state to an imaginary vector.  Its real-form column has support in the
+second block:
+\[
+  \begin{bmatrix}
+    0\\
+    \mathrm{Im}\,\phi_a
+  \end{bmatrix},
+\]
+and can carry matched-filter signal.
+
+The second exact filter comes from the unbroken $U(1)$ spin symmetry.
+The DMRG state lies in the $S^z_{\rm tot}=0$ sector, and
+$G=S^z_\pi$ commutes with $S^z_{\rm tot}$.  Therefore
+\[
+  \ket{\dd G}
+\]
+also lies in the $S^z_{\rm tot}=0$ sector.  Any operator string whose
+ladder-operator decomposition has no $\Delta S^z=0$ component creates a
+state orthogonal to $\ket{\dd G}$ and cannot contribute to the matched
+filter.
+
+In the Cartesian Pauli basis, each $S^x$ or $S^y$ contributes one
+transverse ladder operator:
+\[
+  S^x=\frac12(S^+ + S^-),
+  \qquad
+  S^y=\frac{1}{2i}(S^+ - S^-).
+\]
+A product with an odd number of transverse factors has only odd total
+$\Delta S^z$ sectors and therefore no $\Delta S^z=0$ component.  Hence
+we must also require
+\[
+  \#\{i:c_i\in\{1,2\}\}\equiv0\pmod 2.
+\]
+
+Therefore, for this real-state, $S^z_\pi$ problem, the code enumerates
+only connected Pauli strings satisfying both
+\[
+  \#Y\equiv1\pmod2,
+  \qquad
+  \#(X,Y)\equiv0\pmod2.
+\]
+The first condition is the real-form/time-reversal filter; the second is
+the $U(1)$ spin-charge filter.  Both are exact for this campaign.  As a
+sanity check, on the dimer state the reduced basis gives
+\[
+  \eta_{\le2}=1,
+  \qquad
+  \eta_{\le4}=1,
+\]
+matching the full ED result.
+
+\section{Operator Enumeration}
+
+The local Pauli alphabet is encoded as
+\[
+  0=I,\qquad 1=S^x,\qquad 2=S^y,\qquad 3=S^z.
+\]
+For a window of length $w$, a code tuple
+\[
+  c=(c_1,\ldots,c_w)
+\]
+is included if
+\begin{enumerate}
+  \item it has exact support on that window:
+  \[
+    c_1\ne0,\qquad c_w\ne0,
+  \]
+  \item and it has odd $Y$ parity:
+  \[
+    \#\{i:c_i=2\}\equiv1\pmod 2.
+  \]
+  \item and it lies in the $\Delta S^z=0$ sector:
+  \[
+    \#\{i:c_i=1\ \text{or}\ c_i=2\}\equiv0\pmod 2.
+  \]
+\end{enumerate}
+For a chain with open boundaries, windows are
+\[
+  W_{r,w}=\{r,r+1,\ldots,r+w-1\},
+  \qquad
+  r=1,\ldots,N-w+1.
+\]
+The cumulative basis for $\eta_{\le k}$ is
+\[
+  \mathcal B_{\le k}
+  =
+  \bigcup_{w=1}^{k}
+  \bigcup_{r=1}^{N-w+1}
+  \left\{
+    O_{r,w,c}
+  \right\}.
+\]
+Thus $\eta_{\le4}$ contains all $\eta_{\le2}$ operators plus the
+additional three- and four-site connected-window strings.
+
+\section{MPS-Level Algorithm}
+
+For each saved checkpoint
+\[
+  \texttt{obs/T0\_path/<label>\_N<N>\_psi.h5},
+\]
+the code performs the following steps.
+
+\subsection{Step 1: Load and Densify the MPS}
+
+The production DMRG used $S^z$ quantum-number conservation.  Operators
+containing $S^x$ and $S^y$ change quantum number sectors, so before
+applying arbitrary Pauli strings we convert the block-sparse MPS to a
+dense MPS:
+\begin{lstlisting}
+f = h5open(psi_path, "r")
+psi = read(f, "psi", MPS)
+close(f)
+
+psi = dense(psi)
+sites = siteinds(psi)
+\end{lstlisting}
+
+At the tensor level, an open-boundary MPS is
+\begin{equation}
+  \ket{\psi}
+  =
+  \sum_{\sigma_1,\ldots,\sigma_N}
+  A^{[1]\sigma_1}
+  A^{[2]\sigma_2}
+  \cdots
+  A^{[N]\sigma_N}
+  \ket{\sigma_1\cdots\sigma_N}.
+\end{equation}
+Each local tensor has one physical index $\sigma_j$ and up to two bond
+indices:
+\begin{equation}
+  A^{[j]}
+  =
+  A^{[j]\sigma_j}_{\alpha_{j-1},\alpha_j}.
+\end{equation}
+With quantum-number conservation turned on, the tensor is block sparse:
+only entries obeying the $S^z$ flux rule are stored.  A local $S^x$ or
+$S^y$ operator changes the $S^z$ quantum number on the physical index,
+so applying it generally creates sectors that were absent in the
+block-sparse representation.  The call
+\[
+  \texttt{dense(psi)}
+\]
+removes the QN block structure and stores ordinary dense tensors, so
+non-$S^z$-conserving Pauli strings can be applied safely.
+
+\subsection{Step 2: Build the Target Vector}
+
+Construct the MPO
+\[
+  G=\sum_{j=1}^{N}(-1)^j S^z_j
+\]
+and apply it to the MPS:
+\begin{lstlisting}
+function staggered_Gpsi(psi::MPS, sites)
+    N = length(psi)
+    os = OpSum()
+    for j in 1:N
+        os += (-1)^j, "Sz", j
+    end
+    G = MPO(os, sites)
+    out = apply(G, psi; cutoff=1e-14)
+    noprime!(out)
+    return out
+end
+\end{lstlisting}
+Then center the vector:
+\begin{lstlisting}
+function centered(phi::MPS, psi::MPS)
+    ev = inner(psi, phi)
+    return phi - ev * psi
+end
+
+target = centered(staggered_Gpsi(psi, sites), psi)
+\end{lstlisting}
+Mathematically,
+\[
+  \ket{\mathrm{target}}
+  =
+  \ket{\dd G}
+  =
+  \left(G-\langle G\rangle\right)\ket{\psi}.
+\]
+
+\subsection{Step 3: Apply Each Pauli String}
+
+For each connected-window Pauli string $O_a$, apply the local operators
+directly to a copy of the MPS:
+\begin{lstlisting}
+const PAULI_OPS = Dict(1 => "Sx", 2 => "Sy", 3 => "Sz")
+
+function apply_pauli_string(psi::MPS, sites, start::Int, codes::Vector{Int})
+    phi = copy(psi)
+    for (off, code) in enumerate(codes)
+        code == 0 && continue
+        j = start + off - 1
+        Oj = dense(op(PAULI_OPS[code], sites[j]))
+        phi[j] = Oj * phi[j]
+        noprime!(phi[j])
+    end
+    return phi
+end
+\end{lstlisting}
+Then center it:
+\begin{lstlisting}
+phi_a = centered(apply_pauli_string(psi, sites, start, codes), psi)
+\end{lstlisting}
+This gives
+\[
+  \ket{\phi_a}
+  =
+  \left(O_a-\langle O_a\rangle\right)\ket{\psi}.
+\]
+
+\subsection{What local operator application means}
+
+Suppose a one-site operator $O_j$ has matrix elements
+\[
+  (O_j)_{\tau_j\sigma_j}
+\]
+on the physical spin-$1/2$ basis.  Applying it to the MPS changes only
+the local tensor at site $j$:
+\begin{equation}
+  \widetilde A^{[j]\tau_j}_{\alpha_{j-1},\alpha_j}
+  =
+  \sum_{\sigma_j}
+  (O_j)_{\tau_j\sigma_j}
+  A^{[j]\sigma_j}_{\alpha_{j-1},\alpha_j}.
+  \label{eq:local_tensor_application}
+\end{equation}
+All other tensors are unchanged.  A Pauli string on a connected window
+\[
+  O_a
+  =
+  P_{r}^{(c_1)}
+  P_{r+1}^{(c_2)}
+  \cdots
+  P_{r+w-1}^{(c_w)}
+\]
+is applied by repeating \eqref{eq:local_tensor_application} on each site
+in the window.  This is precisely what the code
+\begin{lstlisting}
+phi[j] = Oj * phi[j]
+noprime!(phi[j])
+\end{lstlisting}
+does.  In ITensor notation, \texttt{Oj} carries a primed output site
+index and an unprimed input site index.  Multiplying it into
+\texttt{phi[j]} contracts the input physical leg with the tensor's site
+index and leaves a primed output site index.  The call
+\texttt{noprime!} renames that output leg back to the standard site
+index so the resulting object is again a valid MPS with the same site
+index set as $\ket{\psi}$.
+
+No global Hilbert-space vector is formed.  The cost of applying a
+length-$w$ Pauli string is just $w$ local tensor contractions, followed
+by MPS inner products when that vector is used in the Gram matrix.
+
+\subsection{Step 4: Build the Gram Matrix and Target Vector}
+
+The code never forms a $2^N$ Hilbert-space vector.  Instead it evaluates
+all needed quantities with MPS inner products:
+\begin{lstlisting}
+K[a,c] = real(inner(phis[a], phis[c]))
+b[a]   = imag(inner(phis[a], target))
+\end{lstlisting}
+The real symmetric matrix
+\[
+  K_{ab}
+  =
+  \mathrm{Re}\braket{\phi_a}{\phi_b}
+\]
+is the covariance/Gram matrix of the real operator-action subspace.
+The vector
+\[
+  b_a
+  =
+  \mathrm{Im}\braket{\phi_a}{\dd G}
+\]
+is the real-form target overlap.  Up to the common normalization
+conventions, this is the matched-filter signal $s_a$.
+
+\subsection{How MPS inner products are evaluated}
+
+For two MPSs
+\[
+  \ket{\phi}
+  =
+  \sum_{\bm\sigma}
+  B^{[1]\sigma_1}\cdots B^{[N]\sigma_N}
+  \ket{\bm\sigma},
+  \qquad
+  \ket{\chi}
+  =
+  \sum_{\bm\sigma}
+  C^{[1]\sigma_1}\cdots C^{[N]\sigma_N}
+  \ket{\bm\sigma},
+\]
+the inner product is the tensor-network contraction
+\begin{equation}
+  \braket{\phi}{\chi}
+  =
+  \sum_{\bm\sigma}
+  \overline{
+    B^{[1]\sigma_1}
+    \cdots
+    B^{[N]\sigma_N}
+  }
+  C^{[1]\sigma_1}
+  \cdots
+  C^{[N]\sigma_N}.
+\end{equation}
+ITensor evaluates this from left to right by building an environment:
+\begin{equation}
+  L_j
+  =
+  \sum_{\sigma_1,\ldots,\sigma_j}
+  \overline{
+    B^{[1]\sigma_1}\cdots B^{[j]\sigma_j}
+  }
+  C^{[1]\sigma_1}\cdots C^{[j]\sigma_j}.
+\end{equation}
+This avoids ever expanding the $2^N$ coefficient vector.  The final
+scalar is what \texttt{inner(phi, chi)} returns.
+
+Thus the Gram element
+\[
+  K_{ab}=\mathrm{Re}\braket{\phi_a}{\phi_b}
+\]
+is computed by contracting two MPSs produced by local Pauli-string
+actions.  Similarly,
+\[
+  b_a=\mathrm{Im}\braket{\phi_a}{\dd G}
+\]
+is computed by contracting the Pauli-string-action MPS with the MPO
+application MPS $\ket{\dd G}$.
+
+\subsection{Step 5: Solve the Projection / Wiener Problem}
+
+Diagonalize
+\[
+  K=V\Lambda V^T.
+\]
+Discard eigenvalues below a numerical tolerance
+\[
+  \lambda_\alpha
+  \le
+  \epsilon_{\rm rel}\max(1,\lambda_{\rm max}).
+\]
+Then compute
+\begin{equation}
+  \mathrm{num}
+  =
+  \sum_{\alpha:\lambda_\alpha>0}
+  \frac{
+    \left[(V^Tb)_\alpha\right]^2
+  }{
+    \lambda_\alpha
+  }.
+\end{equation}
+Finally
+\begin{equation}
+  \boxed{
+  \eta_{\le k}
+  =
+  \frac{\mathrm{num}}{\braket{\dd G}{\dd G}}.
+  }
+\end{equation}
+The corresponding code is:
+\begin{lstlisting}
+function eta_from_basis(phis::Vector{MPS}, target::MPS; eig_rtol::Float64=1e-10)
+    M = length(phis)
+    K = zeros(Float64, M, M)
+    b = zeros(Float64, M)
+
+    for a in 1:M
+        b[a] = imag(inner(phis[a], target))
+        for c in 1:a
+            val = real(inner(phis[a], phis[c]))
+            K[a, c] = val
+            K[c, a] = val
+        end
+    end
+
+    K = 0.5 .* (K .+ K')
+    evals, evecs = eigen(Symmetric(K))
+
+    maxeval = maximum(abs.(evals))
+    tol = max(1.0, maxeval) * eig_rtol
+    keep = findall(>(tol), evals)
+
+    coeff = evecs[:, keep]' * b
+    num = sum(abs2.(coeff ./ sqrt.(evals[keep])))
+    norm_target = real(inner(target, target))
+
+    return num / norm_target, length(keep)
+end
+\end{lstlisting}
+
+\section{Cumulative Computation of \texorpdfstring{$\eta_{\le2}$}{eta<=2}
+and \texorpdfstring{$\eta_{\le4}$}{eta<=4}}
+
+The implementation accumulates the basis by increasing window size.  For
+each $k$, all strings of length $k$ are appended to the existing basis,
+and the projection is recomputed:
+\begin{lstlisting}
+phis = MPS[]
+
+for k in 1:kmax
+    for start in 1:(length(psi) - k + 1)
+        for codes in odd_y_codes(k)
+            phi = centered(apply_pauli_string(psi, sites, start, codes), psi)
+            push!(phis, phi)
+        end
+    end
+
+    eta, rank = eta_from_basis(phis, target; eig_rtol=eig_rtol)
+    eta_by_k[string(k)] = eta
+    rank_by_k[string(k)] = rank
+    nops_by_k[string(k)] = length(phis)
+end
+\end{lstlisting}
+Thus the reported $k=4$ value is truly
+\[
+  \eta_{\le4},
+\]
+not the contribution of exactly four-site windows alone.
+
+\section{Submitted Production Job}
+
+The current production postprocessing is submitted as
+\[
+  \texttt{qfi\_eta\_path\_T0.slurm}.
+\]
+It runs one path checkpoint per array task:
+\begin{lstlisting}[language=bash]
+julia --project="$QFI_JULIA_PROJECT" compute_eta_path_T0.jl \
+    --input-file "$IN" \
+    --out "$OUT" \
+    --kmax 4 \
+    --eig-rtol 1e-10
+\end{lstlisting}
+The output for each state is
+\[
+  \texttt{obs/T0\_path\_eta/<label>\_N<N>\_eta.json}.
+\]
+Each JSON contains
+\begin{itemize}
+  \item the path label and couplings $(J_1,J_2,J_3)$,
+  \item $N$, $E_0$, $\chi_{\rm final}$, and $\FQ$,
+  \item $\eta_{\le1},\eta_{\le2},\eta_{\le3},\eta_{\le4}$,
+  \item the numerical rank retained in each Gram solve,
+  \item the number of operator-action vectors included.
+\end{itemize}
+
+\section{Sanity Check}
+
+Before launching the full path job, the code was tested on the corrected
+dimer state $D=(1,0,0)$ at $N=16$.  Since this is a product of isolated
+singlets, the matched filter must saturate already at $k=2$:
+\[
+  \eta_{\le2}(D)=1.
+\]
+The MPS postprocessor returned
+\[
+  \eta_{\le2}=1.0000000000000016,
+  \qquad
+  \eta_{\le4}=1.0000000000000007.
+\]
+This confirms the operator basis, real-form projection, and MPS inner
+product implementation are consistent with the ED matched-filter
+definition.
+
+\section{Final Figure to Produce}
+
+After all 39 postprocessing tasks complete, the final important figure is
+\[
+  \eta_{\le2},\ \eta_{\le4}
+  \quad\text{along}\quad
+  D\to C\to U\to D
+\]
+for
+\[
+  N=16,32,64.
+\]
+Together with the already-generated $F_Q$ path figure, this gives the two
+central numerical diagnostics for the chosen generator and chosen
+observable algebra:
+\[
+  \boxed{\FQ\ \text{and}\ \eta_{\le k}.}
+\]
+
+The interpretation is:
+\begin{itemize}
+  \item $\FQ$ gives the total staggered response strength.
+  \item $\eta_{\le k}$ gives the fraction of that response visible to
+  connected local windows of size at most $k$.
+\end{itemize}
+Therefore the pair
+\[
+  \left(\FQ,\eta_{\le k}\right)
+\]
+separates ``how much response exists'' from ``how that response can be
+read out.''  Along the corrected
+$D\to C\to U\to D$ path, the expectation is:
+\begin{itemize}
+  \item at the dimer point $D$, the response is visible already through
+  two-site bond operators;
+  \item at the four-site cluster point $C$, the response should be
+  visible through four-site windows;
+  \item at the uniform Heisenberg point $U$, fixed finite windows should
+  capture a decreasing fraction as $N$ grows, because the response is
+  scale-delocalized.
+\end{itemize}
+This statement is intentionally about the \emph{operator channel} of the
+response.  In another phase, such as a Haldane SPT phase, the correct
+operator channel may be string-like rather than local-window-like.  In
+that case one should compare
+\[
+  \eta_{\rm local}(k)
+  \qquad\text{against}\qquad
+  \eta_{\rm string}(k,\ell),
+\]
+rather than interpreting a small local-window value as long-range
+entanglement.
+
+\end{document}

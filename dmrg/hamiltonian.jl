@@ -1,20 +1,26 @@
 """
-hamiltonian.jl --- J1-J2-J3 spin-1/2 chain MPO builder.
+hamiltonian.jl --- period-4 J1-J2-J3 spin-1/2 chain MPO builder.
 
-Three reference points used in the manuscript:
-    (D) Majumdar-Ghosh dimer    (J1,J2,J3) = (1.0, 0.5, 0.0)
-    (C) Cluster product          (J1,J2,J3) ≈ (0.241, 0.451, 0.308)
-    (U) Uniform Heisenberg       (J1,J2,J3) = (1.0, 0.0, 0.0)
+The model is a nearest-neighbor Heisenberg chain with a repeating
+period-4 bond pattern
 
-Open boundary conditions throughout.
+    J1, J2, J1, J3, J1, J2, J1, J3, ...
+
+so J1/J2/J3 label bond classes, not first-/second-/third-neighbor
+couplings. Open boundary conditions are used throughout.
+
+Reference points:
+    (D) Dimer / isolated singlets    (J1,J2,J3) = (1.0, 0.0, 0.0)
+    (C) Four-site clusters           (J1,J2,J3) = (1.0, 1.0, 0.0)
+    (U) Uniform Heisenberg chain     (J1,J2,J3) = (1.0, 1.0, 1.0)
 """
 
 using ITensors, ITensorMPS
 
 const PHASE_COUPLINGS = Dict(
-    "D" => (1.0, 0.5, 0.0),
-    "C" => (0.241, 0.451, 0.308),
-    "U" => (1.0, 0.0, 0.0),
+    "D" => (1.0, 0.0, 0.0),
+    "C" => (1.0, 1.0, 0.0),
+    "U" => (1.0, 1.0, 1.0),
 )
 
 """
@@ -30,20 +36,25 @@ end
 """
     j1j2j3_mpo(sites, J1, J2, J3)
 
-Build the MPO H = J1 Σ S_i·S_{i+1} + J2 Σ S_i·S_{i+2} + J3 Σ S_i·S_{i+3}
-on open boundary.
+Build the MPO for the period-4 nearest-neighbor bond pattern:
+bond i=(i,i+1) has coupling J1 for i mod 4 in {1,3}, J2 for i mod 4 = 2,
+and J3 for i mod 4 = 0 (Julia 1-indexed sites).
 """
 function j1j2j3_mpo(sites, J1::Real, J2::Real, J3::Real)
     N = length(sites)
     os = OpSum()
-    for r in 1:3
-        Jr = (J1, J2, J3)[r]
-        Jr == 0 && continue
-        for j in 1:(N-r)
-            os += Jr/2, "S+", j, "S-", j+r
-            os += Jr/2, "S-", j, "S+", j+r
-            os += Jr,   "Sz", j, "Sz", j+r
+    for j in 1:(N - 1)
+        Jr = if mod(j, 4) in (1, 3)
+            J1
+        elseif mod(j, 4) == 2
+            J2
+        else
+            J3
         end
+        Jr == 0 && continue
+        os += Jr/2, "S+", j, "S-", j+1
+        os += Jr/2, "S-", j, "S+", j+1
+        os += Jr,   "Sz", j, "Sz", j+1
     end
     return MPO(os, sites)
 end
